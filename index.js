@@ -1,7 +1,6 @@
 require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
-const swaggerUi = require("swagger-ui-express")
 const swaggerSpec = require("./config/swagger")
 const connectDB = require("./config/database")
 
@@ -26,14 +25,33 @@ app.get("/swagger.json", (req, res) => {
   res.send(swaggerSpec)
 })
 
-// Swagger UI (single mount, points to /swagger.json)
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(undefined, {
-    swaggerOptions: { url: "/swagger.json" },
-  })
-)
+// ✅ Swagger UI via CDN (no local static assets)
+app.get("/api-docs", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Healentra API Docs</title>
+        <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+      </head>
+      <body>
+        <div id="swagger-ui"></div>
+        <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+        <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+        <script>
+          window.onload = () => {
+            SwaggerUIBundle({
+              url: '/swagger.json',
+              dom_id: '#swagger-ui',
+              presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+              layout: "BaseLayout"
+            })
+          }
+        </script>
+      </body>
+    </html>
+  `)
+})
 
 // Routes
 app.use("/api/auth", authRoutes)
